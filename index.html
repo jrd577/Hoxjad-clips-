@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hoxjad Clips</title>
+<style>:root{--bg:#0f0f14;--fg:#f4f4f8;--card:#1a1a22;--ac:#ff7a1a;--mut:#9a9aa8;--bd:#2a2a35;color-scheme:dark}@media(prefers-color-scheme:light){:root{--bg:#f6f6f9;--fg:#15151c;--card:#fff;--mut:#6a6a78;--bd:#dcdce4;color-scheme:light}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,sans-serif}.w{max-width:760px;margin:0 auto;padding:16px;display:grid;gap:14px}h1{margin:0}h1 span{color:var(--ac)}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;display:grid;gap:10px}label,small{color:var(--mut);font-size:13px}
+input,textarea,select{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:10px;padding:10px;font:inherit}button,.dl{background:var(--ac);color:#1a0d00;border:0;border-radius:12px;padding:12px;font:inherit;font-weight:700;cursor:pointer;text-align:center;text-decoration:none}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:10px}video{width:100%;max-height:420px;border-radius:12px;background:#000}.sc{background:var(--ac);color:#1a0d00;border-radius:10px;padding:2px 10px;font-weight:800}</style></head>
+<body><div class="w"><div><h1>Hoxjad <span>Clips</span></h1><small>Paste a link or upload a video. Only use content you own or have permission to clip.</small></div>
+<div class="c"><label>Video link (YouTube, Vimeo, X, direct file links and more)</label><input id="url" placeholder="https://...">
+<label>or upload a file</label><input id="file" type="file" accept="video/*">
+<div class="g"><label>Number of clips<input id="n" type="number" min="1" max="100" value="3"></label><label>Clip length<select id="len"><option value="15,30">15-30s</option><option value="30,60" selected>30-60s</option><option value="60,90">60-90s</option></select></label></div>
+<label>What should AI look for?</label><textarea id="prompt">Select the most interesting moments</textarea>
+<label>Niche (improves best-time suggestions)<input id="niche" placeholder="e.g. business podcast"></label>
+<label><input id="vert" type="checkbox" checked style="width:auto"> Vertical 9:16</label><label><input id="cap" type="checkbox" checked style="width:auto"> Burn in captions</label>
+<label>Access code (if set)<input id="code" type="password"></label><button id="go">Generate clips</button><small id="st"></small></div><div id="out" style="display:grid;gap:12px"></div></div>
+<script>const $=i=>document.getElementById(i);
+$('go').onclick=async()=>{const fd=new FormData(),[mn,mx]=$('len').value.split(',');fd.append('url',$('url').value);if($('file').files[0])fd.append('file',$('file').files[0]);
+Object.entries({n:$('n').value,min:mn,max:mx,prompt:$('prompt').value,niche:$('niche').value,vertical:$('vert').checked,captions:$('cap').checked}).forEach(([k,v])=>fd.append(k,v));
+$('go').disabled=true;$('out').innerHTML='';$('st').textContent='Starting...';const h={'x-access-code':$('code').value};
+try{const r=await fetch('/api/jobs',{method:'POST',body:fd,headers:h}),j=await r.json();if(!r.ok)throw new Error(j.error);
+const t=setInterval(async()=>{const s=await(await fetch('/api/jobs/'+j.id,{headers:h})).json();$('st').textContent=s.step;
+$('out').innerHTML=s.clips.map(c=>`<div class="c"><video src="${c.file}" controls playsinline></video><b>${c.title} <span class="sc">${c.score}</span></b><small>Hook ${c.hook} · Flow ${c.flow} · Value ${c.value} · Trend ${c.trend}</small><small>${c.reason}</small><small>${c.caption} ${c.hashtags}</small><small>Best time to post: ${c.bestTime||''}</small><a class="dl" href="${c.file}" download>Download</a></div>`).join('');
+if(s.status!=='running'){clearInterval(t);$('go').disabled=false}},2500)}catch(e){$('st').textContent=e.message;$('go').disabled=false}};</script></body></html>
